@@ -7,17 +7,17 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * REPOSITORY = database tho matladey layer (SQL rayalsina pani ledu).
- * Method peru chusi Spring ae query raayalo automatic ga ardham chesukuntundi.
+ * Repository: the data access layer (no hand-written SQL needed).
+ * Spring Data derives each query from the method name.
  */
 public interface UserRepository extends JpaRepository<User, Long> {
 
     // SELECT * FROM users WHERE username = ?
     Optional<User> findByUsername(String username);
 
-    // username already undo ledo check
+    // Checks whether a username is already taken
     boolean existsByUsername(String username);
 
-    // Leaderboard: XP ekkuva nundi takkuva ki sort chesi top 10
+    // Leaderboard: top 10 users ordered by XP, highest first
     List<User> findTop10ByOrderByXpDesc();
 }

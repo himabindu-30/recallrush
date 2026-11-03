@@ -4,12 +4,12 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * MAIN CLASS = project start button.
+ * Application entry point.
  *
- * Idi run chesthe Spring Boot:
- *   1. Tomcat server start chestundi (port 8080)
- *   2. @RestController, @Service, @Repository classes ni vethiki objects create chestundi
- *   3. Database tho connect avthundi, tables create chestundi
+ * Running this class makes Spring Boot:
+ *   1. Start the embedded Tomcat server (port 8080)
+ *   2. Scan for and create the controller, service and repository beans
+ *   3. Connect to the database and create the tables
  */
 @SpringBootApplication // = @Configuration + @EnableAutoConfiguration + @ComponentScan
 public class RecallRushApplication {

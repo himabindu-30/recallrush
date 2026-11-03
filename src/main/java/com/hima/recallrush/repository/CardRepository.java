@@ -8,28 +8,28 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Method names ni chadivi chudandi, English sentence laaga untayi:
- *   "DeckOwnerId"        -> card.deck.owner.id   (relationships lo lopaliki velthundi)
+ * Method names read like English sentences:
+ *   "DeckOwnerId"          -> card.deck.owner.id (navigates through relationships)
  *   "DueDateLessThanEqual" -> dueDate <= ?
  */
 public interface CardRepository extends JpaRepository<Card, Long> {
 
     List<Card> findByDeckId(Long deckId);
 
-    // Deck card counts (deck list lo chupinchadaniki)
+    // Per-deck counts (shown in the deck list)
     long countByDeckId(Long deckId);
     long countByDeckIdAndDueDateLessThanEqual(Long deckId, LocalDate date);
 
-    // User total counts (stats ki)
+    // Per-user counts (used by the stats dashboard)
     long countByDeckOwnerId(Long userId);
     long countByDeckOwnerIdAndDueDateLessThanEqual(Long userId, LocalDate date);
 
-    // Study session ki: user ki due ayina anni cards
+    // Study session: all cards due for a user
     List<Card> findByDeckOwnerIdAndDueDateLessThanEqual(Long userId, LocalDate date);
 
-    // Study session ki: oka deck lo matrame due cards (owner check tho)
+    // Study session: due cards of one deck (with an ownership check)
     List<Card> findByDeckIdAndDeckOwnerIdAndDueDateLessThanEqual(Long deckId, Long userId, LocalDate date);
 
-    // Card ni teeskovadam, kani aa card ee user di ayithene
+    // Fetch a card only if it belongs to the given user
     Optional<Card> findByIdAndDeckOwnerId(Long cardId, Long userId);
 }

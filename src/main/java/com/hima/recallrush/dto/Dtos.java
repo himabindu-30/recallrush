@@ -8,19 +8,19 @@ import jakarta.validation.constraints.Size;
 import java.util.Map;
 
 /**
- * DTO = Data Transfer Object. API ki vachey (request) mariyu velley (response) data ki "shape".
+ * DTOs (Data Transfer Objects) define the shape of API requests and responses.
  *
- * Endukante entity ni direct ga pampakoodadu:
- *   - User entity lo password hash undi (leak avuthundi!)
- *   - Extra computed fields (cardCount, dueCount) kavali
+ * Why not return entities directly:
+ *   - The User entity contains the password hash, which must never leak
+ *   - Responses need computed fields (cardCount, dueCount) that entities do not have
  *
- * "record" = Java 16+ lo short class. Fields + constructor + getters automatic.
- * Ex: new AuthResponse("abc", "hima")  ->  response.token(), response.username()
+ * A Java "record" is a compact immutable class: fields, constructor and accessors are generated.
+ * Example: new AuthResponse("abc", "hima") -> response.token(), response.username()
  */
 public class Dtos {
 
     private Dtos() {
-    } // ee class object create cheyyakudadu, just container
+    } // utility holder; not meant to be instantiated
 
     // ---------- REQUESTS (frontend -> backend) ----------
     public record AuthRequest(
@@ -34,7 +34,7 @@ public class Dtos {
     public record CardRequest(@NotBlank String front, @NotBlank String back) {
     }
 
-    // quality: 0 (blackout) ... 5 (perfect). Frontend buttons: Again=1, Hard=3, Good=4, Easy=5
+    // quality: 0 (blackout) to 5 (perfect). Frontend buttons: Again=1, Hard=3, Good=4, Easy=5
     public record ReviewRequest(@Min(0) @Max(5) int quality) {
     }
 
@@ -45,7 +45,7 @@ public class Dtos {
     public record DeckResponse(Long id, String name, String description, long cardCount, long dueCount) {
     }
 
-    // Card review chesaka frontend ki em cheppali: next date, XP, level, streak
+    // Returned after a card review: next due date, XP earned, level and streak
     public record ReviewResult(String nextDue, int intervalDays, int xpGained,
                                int totalXp, int level, int streak) {
     }

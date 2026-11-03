@@ -7,11 +7,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * DECK = flashcards group (ex: "Java Basics", "DBMS Unit 2").
+ * Deck: a named group of flashcards (for example "Java Basics" or "DBMS Unit 2").
  *
  * Relationships:
- *   User (1) ----- (many) Deck      -> "owner"
- *   Deck (1) ----- (many) Card      -> "cards"
+ *   User (1) ----- (many) Deck   via "owner"
+ *   Deck (1) ----- (many) Card   via "cards"
  */
 @Entity
 @Table(name = "decks")
@@ -26,15 +26,15 @@ public class Deck {
 
     private String description;
 
-    // MANY decks -> ONE user. LAZY = deck load chesinappudu user ni apudu techukoadu (performance ki manchidi)
+    // Many decks belong to one user. LAZY = the user is loaded only when accessed (better performance).
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "owner_id") // DB lo foreign key column peru
-    @JsonIgnore                    // JSON lo pampakoodadu (infinite loop & password leak avvakunda)
+    @JoinColumn(name = "owner_id") // foreign key column name
+    @JsonIgnore                    // keep out of JSON (avoids infinite recursion and leaking user data)
     private User owner;
 
-    // ONE deck -> MANY cards. mappedBy = "Card.deck" field ee relationship ni own chestundi
-    // cascade ALL = deck delete chesthe cards kuda automatic ga delete avthayi
-    // orphanRemoval = list nundi card teesesthe DB nundi kuda delete
+    // One deck has many cards. mappedBy = the "deck" field in Card owns the relationship.
+    // cascade ALL: deleting a deck also deletes its cards.
+    // orphanRemoval: removing a card from this list deletes it from the database.
     @OneToMany(mappedBy = "deck", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<Card> cards = new ArrayList<>();

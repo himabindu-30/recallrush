@@ -8,9 +8,10 @@ import java.util.Optional;
 
 public interface DeckRepository extends JpaRepository<Deck, Long> {
 
-    // "Owner" (Deck.owner) yokka "Id" (User.id) -> WHERE owner_id = ?
+    // "Owner" (Deck.owner) + "Id" (User.id) -> WHERE owner_id = ?
     List<Deck> findByOwnerId(Long ownerId);
 
-    // SECURITY: deck id + owner id rendu match avvali. Inkokari deck ni access cheyyakunda ee check.
+    // SECURITY: both the deck id and the owner id must match,
+    // so a user can never access another user's deck.
     Optional<Deck> findByIdAndOwnerId(Long id, Long ownerId);
 }

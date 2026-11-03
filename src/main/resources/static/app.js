@@ -1,11 +1,11 @@
 /* =====================================================
-   app.js = frontend logic.
-   Pani: buttons click cheste backend API ki fetch() request pampi, result ni screen meeda chupinchadam.
+   app.js - frontend logic.
+   Handles button clicks, calls the backend API with fetch(), and renders the results.
    ===================================================== */
 
 const API = '/api';
 
-// Login token & username browser lo (localStorage) save chestam, refresh chesina login alaage undali
+// The login token and username are kept in localStorage so the user stays logged in after a refresh
 let token = localStorage.getItem('token');
 let username = localStorage.getItem('username');
 
@@ -14,14 +14,15 @@ let username = localStorage.getItem('username');
 // Shortcut: document.getElementById('x') -> $('x')
 const $ = (id) => document.getElementById(id);
 
-// SECURITY (XSS protection): user rasina text lo <script> unte, HTML ga kakunda plain text ga marchadam
+// SECURITY (XSS protection): converts user-supplied text to safe HTML,
+// so a value like <script>...</script> is displayed as text and never executed.
 function esc(text) {
   const div = document.createElement('div');
-  div.textContent = text == null ? '' : text; // textContent HTML ni run cheyyadu
+  div.textContent = text == null ? '' : text; // textContent never interprets HTML
   return div.innerHTML;
 }
 
-// Date ni "YYYY-MM-DD" ga marchadam (heatmap keys tho match avvadaniki)
+// Formats a Date as "YYYY-MM-DD" (matches the heatmap keys from the backend)
 function fmtDate(d) {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
@@ -29,10 +30,10 @@ function fmtDate(d) {
 }
 
 /**
- * api() = anni backend calls ki oke function.
- *  - token unte "Authorization: Bearer <token>" header add chestundi
- *  - 401 vaste (token expire) -> logout
- *  - error aithe backend {"message": "..."} ni Error ga throw chestundi
+ * api() is the single function used for every backend call.
+ *  - Adds the "Authorization: Bearer <token>" header when a token exists
+ *  - On 401 (expired or invalid token) it logs the user out
+ *  - On errors it throws an Error carrying the backend's {"message": "..."} text
  */
 async function api(path, method = 'GET', body = null) {
   const headers = { 'Content-Type': 'application/json' };
@@ -44,13 +45,13 @@ async function api(path, method = 'GET', body = null) {
     body: body ? JSON.stringify(body) : undefined
   });
 
-  if (res.status === 401 && token) {   // token undi kani reject = session expired
+  if (res.status === 401 && token) {   // a token was sent but rejected: the session expired
     logout();
     throw new Error('Session expired, please login again');
   }
-  if (res.status === 204) return null; // 204 = success, body ledu
+  if (res.status === 204) return null; // 204 = success with no body
 
-  const data = await res.json().catch(() => ({})); // body JSON kaakapothe empty object
+  const data = await res.json().catch(() => ({})); // fall back to an empty object if the body is not JSON
   if (!res.ok) throw new Error(data.message || 'Something went wrong');
   return data;
 }
@@ -60,7 +61,7 @@ async function api(path, method = 'GET', body = null) {
 // =====================================================
 let isRegister = false;
 
-// Login <-> Register form toggle
+// Switches the form between Login and Register mode
 function toggleAuthMode() {
   isRegister = !isRegister;
   $('authTitle').textContent = isRegister ? 'Create your account 🚀' : 'Welcome back 👋';
@@ -76,7 +77,7 @@ async function submitAuth() {
       username: $('authUser').value,
       password: $('authPass').value
     });
-    // Token save chesi app open
+    // Save the token, then open the app
     token = data.token;
     username = data.username;
     localStorage.setItem('token', token);
@@ -98,7 +99,7 @@ function logout() {
   $('authView').classList.remove('hidden');
 }
 
-// Login ayyaka: auth form daachi, app chupinchu
+// After login: hide the auth form and show the app
 function showApp() {
   $('authView').classList.add('hidden');
   $('appView').classList.remove('hidden');
@@ -111,22 +112,22 @@ function showApp() {
 // TABS
 // =====================================================
 function switchTab(name) {
-  // Anni tabs daachu, kavalsindi matrame chupinchu
+  // Hide every tab, then show only the selected one
   document.querySelectorAll('.tabview').forEach(t => t.classList.add('hidden'));
   $('tab-' + name).classList.remove('hidden');
 
-  // Active tab highlight
+  // Highlight the active tab button
   document.querySelectorAll('.tab').forEach(b =>
     b.classList.toggle('active', b.dataset.tab === name));
 
-  // Aa tab ki data load
+  // Load the data for that tab
   if (name === 'decks') { closeDeck(); loadDecks(); }
   if (name === 'study') prepareStudy();
   if (name === 'stats') loadStats();
   if (name === 'board') loadBoard();
 }
 
-// Top bar lo Level / XP / Streak chips update
+// Updates the Level / XP / Streak chips in the top bar
 function setChips(level, xp, streak) {
   $('chipLevel').textContent = 'Lv ' + level;
   $('chipXp').textContent = xp + ' XP';
@@ -143,8 +144,8 @@ async function refreshChips() {
 // =====================================================
 // DECKS
 // =====================================================
-let decks = [];          // local copy of decks
-let currentDeck = null;  // ippudu open chesina deck
+let decks = [];          // local copy of the user's decks
+let currentDeck = null;  // the deck currently open
 
 async function loadDecks() {
   decks = await api('/decks');
@@ -155,7 +156,7 @@ async function loadDecks() {
     return;
   }
 
-  // map = prathi deck ki oka HTML block, join = anni kalipi
+  // map builds one HTML block per deck; join concatenates them
   list.innerHTML = decks.map(d => `
     <div class="card item">
       <div>
@@ -249,12 +250,12 @@ async function deleteCard(id) {
 // =====================================================
 // STUDY SESSION
 // =====================================================
-let queue = [];        // study cheyyalsina cards (varusaga)
-let totalToStudy = 0;  // session start lo entha cards
-let doneCount = 0;     // correct ga complete chesina cards
-let sessionXp = 0;     // e session lo vachina XP
+let queue = [];        // cards still to study in this session
+let totalToStudy = 0;  // number of cards when the session started
+let doneCount = 0;     // cards completed (recalled) so far
+let sessionXp = 0;     // XP earned in this session
 
-// Study tab open chesinappudu: deck dropdown fill
+// Runs when the Study tab opens: fills the deck dropdown
 async function prepareStudy() {
   decks = await api('/decks');
   $('studyDeck').innerHTML = '<option value="">All decks (due cards)</option>' +
@@ -263,7 +264,7 @@ async function prepareStudy() {
   $('studyDone').classList.add('hidden');
 }
 
-// Deck list nundi "Study" button
+// "Study" button on a deck in the deck list
 function studyDeck(id) {
   switchTab('study');
   prepareStudy().then(() => {
@@ -290,14 +291,14 @@ async function startStudy() {
   showCard();
 }
 
-// Queue lo first card chupinchu
+// Shows the first card in the queue
 function showCard() {
   if (queue.length === 0) {
     finishStudy();
     return;
   }
   const card = queue[0];
-  $('cardFrontText').textContent = card.front;  // textContent = safe (XSS ledu)
+  $('cardFrontText').textContent = card.front;  // textContent is safe against XSS
   $('cardBackText').textContent = card.back;
   $('answerBox').classList.add('hidden');
   $('rateBox').classList.add('hidden');
@@ -314,24 +315,24 @@ function showAnswer() {
   $('showBtn').classList.add('hidden');
 }
 
-// User rating ichhaka: backend ki pampu (SM-2 + XP + streak backend lo)
+// Sends the rating to the backend (SM-2, XP and streak are all computed there)
 async function rate(quality) {
   const card = queue[0];
   const res = await api('/study/review/' + card.id, 'POST', { quality });
 
   sessionXp += res.xpGained;
-  setChips(res.level, res.totalXp, res.streak); // top bar live update
+  setChips(res.level, res.totalXp, res.streak); // update the top bar immediately
 
   if (quality < 3) {
-    // Marchipoyav: ee session lone malli chupistam (queue last ki)
+    // Forgotten: show it again later in this same session (move to the end of the queue)
     queue.push(queue.shift());
   } else {
-    queue.shift();  // card complete
+    queue.shift();  // card completed
     doneCount++;
   }
 
   $('feedback').textContent = `+${res.xpGained} XP   •   next review in ${res.intervalDays} day(s)`;
-  // 0.7 sec aagi next card (feedback chudadaniki time)
+  // Wait 0.7 seconds so the feedback is readable, then show the next card
   setTimeout(showCard, 700);
 }
 
@@ -342,7 +343,7 @@ function finishStudy() {
 }
 
 // =====================================================
-// STATS (tiles + XP bar + heatmap)
+// STATS (tiles, XP bar, heatmap)
 // =====================================================
 async function loadStats() {
   const s = await api('/stats');
@@ -356,7 +357,7 @@ async function loadStats() {
     ['🔥 ' + s.streak, 'Day streak']
   ].map(t => `<div class="tile"><div class="num">${t[0]}</div><div class="lbl">${t[1]}</div></div>`).join('');
 
-  // XP progress bar: ee level lo entha % complete
+  // XP progress bar: percentage of the current level completed
   const pct = ((s.xp - s.levelStartXp) / (s.nextLevelXp - s.levelStartXp)) * 100;
   $('levelTitle').textContent = `Level ${s.level}`;
   $('xpBar').style.width = pct + '%';
@@ -365,26 +366,26 @@ async function loadStats() {
   drawHeatmap(s.heatmap);
 }
 
-// GitHub-style heatmap: 90 days, prathi day oka box. Ekkuva reviews = dark colour.
+// GitHub-style heatmap: one box per day for 90 days; more reviews = darker color
 function drawHeatmap(data) {
   const cells = [];
   const today = new Date();
 
-  // Mundu empty boxes: first day weekday ki align avvadaniki (getDay: 0=Sun ... 6=Sat)
+  // Leading empty boxes so the first day lines up with its weekday (getDay: 0 = Sunday ... 6 = Saturday)
   const start = new Date(today);
   start.setDate(today.getDate() - 89);
   for (let i = 0; i < start.getDay(); i++) {
     cells.push('<div class="cell" style="background:transparent"></div>');
   }
 
-  // 90 days loop
+  // Loop over the 90 days
   for (let i = 89; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
     const key = fmtDate(d);
     const count = data[key] || 0;
 
-    // count -> colour level (0 to 4)
+    // Map the review count to a color level from 0 to 4
     const level = count === 0 ? 0 : count < 3 ? 1 : count < 6 ? 2 : count < 10 ? 3 : 4;
     cells.push(`<div class="cell l${level}" title="${key}: ${count} review(s)"></div>`);
   }
@@ -410,7 +411,7 @@ async function loadBoard() {
 }
 
 // =====================================================
-// PAGE LOAD: token undi ante direct ga app open, lekapothe login screen
+// PAGE LOAD: if a token exists, open the app directly; otherwise show the login screen
 // =====================================================
 if (token) {
   showApp();

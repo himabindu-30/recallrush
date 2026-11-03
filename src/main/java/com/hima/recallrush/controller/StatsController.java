@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * Dashboard stats & leaderboard API.
+ * Dashboard statistics and leaderboard API.
  */
 @RestController
 @RequestMapping("/api")
@@ -22,13 +22,13 @@ public class StatsController {
         this.statsService = statsService;
     }
 
-    // GET /api/stats -> naa numbers + heatmap
+    // GET /api/stats -> the user's numbers and heatmap data
     @GetMapping("/stats")
     public Dtos.StatsResponse stats(@AuthenticationPrincipal Long userId) {
         return statsService.stats(userId);
     }
 
-    // GET /api/leaderboard -> top 10 users
+    // GET /api/leaderboard -> top 10 users by XP
     @GetMapping("/leaderboard")
     public List<Dtos.LeaderboardEntry> leaderboard() {
         return statsService.leaderboard();

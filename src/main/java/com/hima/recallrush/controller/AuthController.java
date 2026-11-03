@@ -7,13 +7,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * CONTROLLER = API doors. Analogy: Restaurant lo Waiter.
- * Customer (browser) request istadu -> waiter chef (service) ki cheptadu -> result techi istadu.
+ * Controller: exposes the REST API endpoints.
+ * It receives the HTTP request, delegates the work to the service, and returns the result.
  *
  * HTTP methods:  GET = read,  POST = create,  PUT = update,  DELETE = delete
  */
-@RestController                      // return chesina objects ni automatic ga JSON ga marchutundi
-@RequestMapping("/api/auth")         // ee controller URLs anni /api/auth tho start
+@RestController                      // converts returned objects to JSON automatically
+@RequestMapping("/api/auth")         // every URL in this controller starts with /api/auth
 public class AuthController {
 
     private final AuthService authService;
@@ -22,12 +22,12 @@ public class AuthController {
         this.authService = authService;
     }
 
-    // POST /api/auth/register  body: {"username": "...", "password": "..."}
+    // POST /api/auth/register   body: {"username": "...", "password": "..."}
     @PostMapping("/register")
-    @ResponseStatus(HttpStatus.CREATED) // success ayithe 201
+    @ResponseStatus(HttpStatus.CREATED) // 201 on success
     public Dtos.AuthResponse register(@Valid @RequestBody Dtos.AuthRequest req) {
-        // @RequestBody = JSON ni Java object ga marchi istundi
-        // @Valid       = DTO lo unna @NotBlank, @Size checks run chestundi
+        // @RequestBody converts the JSON body into a Java object
+        // @Valid runs the validation annotations (@NotBlank, @Size) declared on the DTO
         return authService.register(req);
     }
 

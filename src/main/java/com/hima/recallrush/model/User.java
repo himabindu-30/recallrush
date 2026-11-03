@@ -5,28 +5,28 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 
 /**
- * USER entity = "users" table lo oka row.
+ * User entity, stored in the "users" table.
  *
- * NOTE: table peru "users" (user kaadu) endukante "user" anedi database lo reserved keyword!
+ * NOTE: the table is named "users" because "user" is a reserved keyword in most databases.
  */
 @Entity
 @Table(name = "users")
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // auto-increment id
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // auto-increment primary key
     private Long id;
 
-    @Column(unique = true, nullable = false) // same username rendu sarlu undakudadu
+    @Column(unique = true, nullable = false) // usernames must be unique
     private String username;
 
     @Column(nullable = false)
-    private String password; // BCrypt HASH save avthundi, asalu password kaadu!
+    private String password; // stores the BCrypt hash, never the plain password
 
     // ----- Gamification fields -----
     private int xp = 0;                // total experience points
-    private int streak = 0;            // continuous ga ela days study chesaro
-    private LocalDate lastStudyDate;   // last ga study chesina date (streak calculate cheyyadaniki)
+    private int streak = 0;            // consecutive days studied
+    private LocalDate lastStudyDate;   // last day the user studied (used to compute the streak)
 
     public User() {
     }

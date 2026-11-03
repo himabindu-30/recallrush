@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * AUTH SERVICE = register & login logic.
+ * Authentication service: registration and login logic.
  */
 @Service
 public class AuthService {
@@ -35,20 +35,20 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already taken"); // 409
         }
 
-        // Password ni HASH chesi save (asalu password DB lo undadu)
+        // Store only the password hash, never the plain password
         User user = userRepo.save(new User(username, encoder.encode(req.password())));
 
-        deckService.createStarterDeck(user); // welcome sample cards
+        deckService.createStarterDeck(user); // welcome deck with sample cards
 
-        // Register ayyaka direct ga login (token istam)
+        // Log the user in immediately after registration by issuing a token
         return new Dtos.AuthResponse(jwtUtil.generateToken(user.getId(), user.getUsername()), user.getUsername());
     }
 
     public Dtos.AuthResponse login(Dtos.AuthRequest req) {
         String username = req.username().trim().toLowerCase();
 
-        // User ledu leka password match kaaledu: RENDU ki same message.
-        // (Different messages istey hacker ki "e username exists" ani telusthundi)
+        // Unknown user and wrong password return the SAME message, so an attacker
+        // cannot tell which usernames exist.
         User user = userRepo.findByUsername(username)
                 .filter(u -> encoder.matches(req.password(), u.getPassword()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password"));

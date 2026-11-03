@@ -5,12 +5,11 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 
 /**
- * REVIEW LOG = prathi sari card review chesinappudu oka "history entry".
- * Idi heatmap, accuracy lanti stats ki base.
+ * ReviewLog: one history entry written every time a card is reviewed.
+ * It is the data source for the activity heatmap and the accuracy statistic.
  *
- * DESIGN NOTE: userId, cardId ni simple Long ga petam (foreign key relation kaadu).
- * Endukante card/deck delete chesina tarvata kuda "history" alaage undali,
- * FK untey delete cheyyadaniki error vastundi.
+ * DESIGN NOTE: userId and cardId are plain Long values rather than foreign keys,
+ * so the history survives even after a card or deck is deleted.
  */
 @Entity
 @Table(name = "review_logs")
@@ -22,8 +21,8 @@ public class ReviewLog {
 
     private Long userId;
     private Long cardId;
-    private int quality;          // 0-5 rating
-    private LocalDate reviewedOn; // e roju review chesaru
+    private int quality;          // rating from 0 to 5
+    private LocalDate reviewedOn; // the day the review happened
     private int xpGained;
 
     public ReviewLog() {

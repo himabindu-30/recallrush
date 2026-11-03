@@ -15,16 +15,15 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * FILTER = security guard at the gate.
- * Prathi request controller ki cherakamunde ee filter run avthundi.
+ * Authentication filter: runs before every request reaches a controller.
  *
- * Pani:
- *   1. Request header lo "Authorization: Bearer <token>" undo chudadam
- *   2. Token valid aithe -> "ee user login ayyadu" ani Spring Security ki cheppadam
- *   3. Token ledu/invalid aithe -> em cheyyadu, aa tarvata SecurityConfig 401 isthundi
+ * What it does:
+ *   1. Looks for an "Authorization: Bearer <token>" header
+ *   2. If the token is valid, tells Spring Security who the user is
+ *   3. If the token is missing or invalid, does nothing; SecurityConfig then returns 401
  */
 @Component
-public class JwtAuthFilter extends OncePerRequestFilter { // OncePerRequestFilter = prathi request ki okka sari matrame run
+public class JwtAuthFilter extends OncePerRequestFilter { // guarantees one execution per request
 
     private final JwtUtil jwtUtil;
 
@@ -40,20 +39,20 @@ public class JwtAuthFilter extends OncePerRequestFilter { // OncePerRequestFilte
         String header = request.getHeader("Authorization");
 
         if (header != null && header.startsWith("Bearer ")) {
-            String token = header.substring(7); // "Bearer " (7 chars) teesesthe token migulutundi
+            String token = header.substring(7); // strip the 7-character "Bearer " prefix
             try {
                 Claims claims = jwtUtil.parse(token);
                 Long userId = Long.valueOf(claims.getSubject());
 
-                // Principal = userId. Controllers lo @AuthenticationPrincipal Long userId ani teeskovachu.
+                // The principal is the user id. Controllers read it with @AuthenticationPrincipal Long userId.
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(userId, null, List.of());
                 SecurityContextHolder.getContext().setAuthentication(auth);
             } catch (JwtException | IllegalArgumentException e) {
-                // Token fake/expired. Authentication set cheyyam -> request reject avthundi (401)
+                // Forged or expired token: leave the request unauthenticated (results in 401)
             }
         }
 
-        chain.doFilter(request, response); // next filter / controller ki pampu
+        chain.doFilter(request, response); // continue to the next filter or controller
     }
 }

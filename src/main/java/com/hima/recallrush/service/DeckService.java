@@ -16,11 +16,11 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * SERVICE = business logic.  Analogy: Restaurant lo Chef.
- * Flow:  Browser -> Controller (waiter) -> Service (chef) -> Repository (store room) -> DB
+ * Service layer: business logic for decks and cards.
+ * Request flow: Browser -> Controller -> Service -> Repository -> Database
  *
- * Ee class: Decks & Cards CRUD. Important: prathi method lo "userId" tho OWNERSHIP check chestam,
- * anduke oka user inkokari decks ni chudalemu / delete cheyyalemu.
+ * Every method receives the userId and checks ownership, so a user
+ * can never view or modify another user's decks or cards.
  */
 @Service
 public class DeckService {
@@ -29,21 +29,22 @@ public class DeckService {
     private final CardRepository cardRepo;
     private final UserRepository userRepo;
 
-    // Constructor injection: Spring ee objects ni automatic ga istundi (Dependency Injection)
+    // Constructor injection: Spring supplies these dependencies automatically
     public DeckService(DeckRepository deckRepo, CardRepository cardRepo, UserRepository userRepo) {
         this.deckRepo = deckRepo;
         this.cardRepo = cardRepo;
         this.userRepo = userRepo;
     }
 
-    // Helper: ee user di aina deck ni techuko, lekapothe 404
+    // Helper: returns the deck if it belongs to the user, otherwise responds with 404
     private Deck ownedDeck(Long userId, Long deckId) {
         return deckRepo.findByIdAndOwnerId(deckId, userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Deck not found"));
     }
 
-    // User decks anni + prathi deck ki card count, due count
-    // (NOTE: prathi deck ki 2 queries = "N+1 problem". Chinna project ki ok, big ki JOIN query vaadali)
+    // Lists the user's decks with card and due counts.
+    // NOTE: this issues 2 queries per deck (the "N+1 problem"). Fine for a small app;
+    // a larger system would use a single JOIN query.
     public List<Dtos.DeckResponse> list(Long userId) {
         LocalDate today = LocalDate.now();
         return deckRepo.findByOwnerId(userId).stream()
@@ -57,7 +58,8 @@ public class DeckService {
     }
 
     public Dtos.DeckResponse create(Long userId, Dtos.DeckRequest req) {
-        // getReferenceById = DB hit cheyyakunda user "reference" matrame techukuntundi (foreign key set cheyyadaniki chaalu)
+        // getReferenceById returns a lightweight reference without hitting the database;
+        // that is enough to set the foreign key.
         User owner = userRepo.getReferenceById(userId);
         Deck deck = deckRepo.save(new Deck(req.name().trim(), req.description(), owner));
         return new Dtos.DeckResponse(deck.getId(), deck.getName(), deck.getDescription(), 0, 0);
@@ -65,7 +67,7 @@ public class DeckService {
 
     public void delete(Long userId, Long deckId) {
         Deck deck = ownedDeck(userId, deckId);
-        deckRepo.delete(deck); // cascade valla cards kuda delete avthayi
+        deckRepo.delete(deck); // cascade also deletes the deck's cards
     }
 
     public List<Card> cards(Long userId, Long deckId) {
@@ -85,9 +87,8 @@ public class DeckService {
     }
 
     /**
-     * Kotha user register ayinappudu "Welcome" deck automatic ga create chestam,
-     * so first login lo empty screen kakunda study cheyyadaniki cards untayi.
-     * @Transactional = anni DB operations oka group: ekkada fail aina anni rollback.
+     * Creates a sample deck for every new user, so the first login is not an empty screen.
+     * @Transactional groups all database operations into one unit: if any fails, all roll back.
      */
     @Transactional
     public void createStarterDeck(User owner) {

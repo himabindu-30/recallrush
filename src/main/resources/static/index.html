@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <!--
-  FRONTEND = user chuse screen (Single Page App).
-  Ee file static/ folder lo undi kabatti Spring Boot automatic ga serve chestundi:
-  browser lo http://localhost:8080 open chesthe idi vastundi.
+  FRONTEND: single-page application (SPA).
+  This file lives in the static/ folder, so Spring Boot serves it automatically:
+  open http://localhost:8080 to see it.
 
-  3 files:  index.html (skeleton)  +  style.css (looks)  +  app.js (logic, backend tho matladadam)
+  Three files:  index.html (structure)  +  style.css (appearance)  +  app.js (logic and API calls)
 -->
 <html lang="en">
 <head>
@@ -19,7 +19,7 @@
   <header class="topbar">
     <div class="brand">⚡ RecallRush</div>
 
-    <!-- User login ayyaka matrame chupistam (hidden class tho) -->
+    <!-- Shown only after login (toggled with the "hidden" class) -->
     <div id="userBar" class="userbar hidden">
       <span class="chip" id="chipLevel">Lv 1</span>
       <span class="chip" id="chipXp">0 XP</span>
@@ -45,7 +45,7 @@
       </p>
     </section>
 
-    <!-- ================= APP VIEW (login ayyaka) ================= -->
+    <!-- ================= APP VIEW (after login) ================= -->
     <div id="appView" class="hidden">
 
       <!-- Tabs -->
@@ -59,12 +59,12 @@
       <!-- ---------- DECKS TAB ---------- -->
       <section id="tab-decks" class="tabview">
 
-        <!-- Decks list view -->
+        <!-- Deck list view -->
         <div id="deckListView">
           <div class="card">
             <h3>Create a deck</h3>
             <div class="row">
-              <input id="deckName" placeholder="Deck name (ex: DBMS Unit 2)">
+              <input id="deckName" placeholder="Deck name (e.g. DBMS Unit 2)">
               <input id="deckDesc" placeholder="Description (optional)">
               <button onclick="createDeck()">Add</button>
             </div>
@@ -73,7 +73,7 @@
           <div id="deckList"></div>
         </div>
 
-        <!-- Cards (inside a deck) view -->
+        <!-- Cards view (inside a deck) -->
         <div id="cardView" class="hidden">
           <button class="ghost" onclick="closeDeck()">← Back to decks</button>
           <h3 id="cardViewTitle"></h3>
@@ -116,7 +116,7 @@
             <button id="showBtn" onclick="showAnswer()">Show answer</button>
           </div>
 
-          <!-- Rating buttons (answer chupinchaka) -->
+          <!-- Rating buttons (shown after the answer is revealed) -->
           <div id="rateBox" class="rate hidden">
             <button class="r1" onclick="rate(1)">Again<small>forgot</small></button>
             <button class="r3" onclick="rate(3)">Hard<small>barely</small></button>

@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * Decks & Cards REST API.
+ * REST API for decks and cards.
  *
- * @AuthenticationPrincipal Long userId  -> JWT filter set chesina userId automatic ga ikkada vastundi.
- * Anduke frontend nundi userId pampakkarledu (pampina kuda trust cheyyam, security!).
+ * @AuthenticationPrincipal Long userId receives the user id that the JWT filter extracted from the token.
+ * The frontend never sends a user id, because a client-supplied id could not be trusted.
  */
 @RestController
 @RequestMapping("/api")
@@ -26,13 +26,13 @@ public class DeckController {
         this.deckService = deckService;
     }
 
-    // GET /api/decks -> naa decks anni
+    // GET /api/decks -> all of the user's decks
     @GetMapping("/decks")
     public List<Dtos.DeckResponse> list(@AuthenticationPrincipal Long userId) {
         return deckService.list(userId);
     }
 
-    // POST /api/decks -> kotha deck
+    // POST /api/decks -> create a deck
     @PostMapping("/decks")
     @ResponseStatus(HttpStatus.CREATED)
     public Dtos.DeckResponse create(@AuthenticationPrincipal Long userId,
@@ -42,18 +42,18 @@ public class DeckController {
 
     // DELETE /api/decks/5
     @DeleteMapping("/decks/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT) // 204 = success, body ledu
+    @ResponseStatus(HttpStatus.NO_CONTENT) // 204: success with no response body
     public void delete(@AuthenticationPrincipal Long userId, @PathVariable Long id) {
         deckService.delete(userId, id);
     }
 
-    // GET /api/decks/5/cards -> aa deck lo cards
+    // GET /api/decks/5/cards -> cards in that deck
     @GetMapping("/decks/{deckId}/cards")
     public List<Card> cards(@AuthenticationPrincipal Long userId, @PathVariable Long deckId) {
         return deckService.cards(userId, deckId);
     }
 
-    // POST /api/decks/5/cards -> aa deck ki kotha card
+    // POST /api/decks/5/cards -> add a card to that deck
     @PostMapping("/decks/{deckId}/cards")
     @ResponseStatus(HttpStatus.CREATED)
     public Card addCard(@AuthenticationPrincipal Long userId, @PathVariable Long deckId,

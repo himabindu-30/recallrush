@@ -15,7 +15,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
 
 /**
- * SECURITY CONFIG = "ye door ki lock undi, ye door open" ani rules.
+ * Security configuration: defines which URLs are public and which require a token.
  */
 @Configuration
 @EnableWebSecurity
@@ -30,31 +30,31 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // CSRF: cookies/session use chesthe kavali. Memu JWT header vaadatam kabatti disable.
+                // CSRF protection is needed for cookie/session auth. We use a JWT header, so it is disabled.
                 .csrf(csrf -> csrf.disable())
 
-                // STATELESS = server session store cheyyadu. Prathi request lo token tho identify.
+                // STATELESS: the server keeps no session; every request is identified by its token
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // H2 console iframe lo open avvadaniki
+                // Allow the H2 console to render inside a same-origin iframe
                 .headers(h -> h.frameOptions(f -> f.sameOrigin()))
 
-                // Login lekunda /api access cheste 401 Unauthorized (default 403 kaakunda)
+                // Return 401 Unauthorized (instead of the default 403) when no valid token is sent
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(antMatcher("/api/auth/**")).permitAll()  // login/register everyone ki open
-                        .requestMatchers(antMatcher("/api/**")).authenticated()   // migilina anni APIs ki token must
-                        .anyRequest().permitAll())                                // HTML/CSS/JS files open
+                        .requestMatchers(antMatcher("/api/auth/**")).permitAll()  // register and login are public
+                        .requestMatchers(antMatcher("/api/**")).authenticated()   // every other API needs a token
+                        .anyRequest().permitAll())                                // static HTML/CSS/JS files are public
 
-                // Mana JWT filter ni default login filter mundu run cheyyadam
+                // Run our JWT filter before Spring's default login filter
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // Password ni BCrypt tho HASH chestam. DB lo asalu password undadu.
-    // BCrypt one-way: hash nundi password tirigi techukoalemu, kevalam match check cheyyagalam.
+    // Passwords are hashed with BCrypt; the database never stores the plain password.
+    // BCrypt is one-way: the original cannot be recovered, only compared against.
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

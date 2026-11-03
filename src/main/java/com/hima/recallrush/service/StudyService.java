@@ -16,11 +16,11 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * STUDY SERVICE = app yokka core. Card review chesinappudu:
- *   1. SM-2 tho card next due date update
- *   2. XP add
- *   3. Streak update
- *   4. History (ReviewLog) save
+ * Study service: the core of the application. When a card is reviewed it:
+ *   1. Reschedules the card using SM-2
+ *   2. Awards XP
+ *   3. Updates the daily streak
+ *   4. Saves a history entry (ReviewLog)
  */
 @Service
 public class StudyService {
@@ -35,7 +35,7 @@ public class StudyService {
         this.logRepo = logRepo;
     }
 
-    // Ivvala study cheyyalsina cards (due date <= today). deckId ichhe aa deck matrame, lekapothe anni.
+    // Cards due today or earlier. If deckId is given, only that deck; otherwise all decks.
     public List<Card> dueCards(Long userId, Long deckId) {
         LocalDate today = LocalDate.now();
         if (deckId == null) {
@@ -45,11 +45,12 @@ public class StudyService {
     }
 
     /**
-     * @Transactional = ee method lo anni DB changes (card, user, log) oka unit.
-     * Madhyalo error vaste anni undo (rollback). Bank transfer laantidi: debit ayyi credit kakapothe ela? Anduke!
+     * @Transactional makes all database changes here (card, user, log) one atomic unit.
+     * If anything fails midway, everything is rolled back, like a bank transfer
+     * where the debit and the credit must both succeed or both be undone.
      *
-     * Managed entity magic: card, user ni repository nundi techukunnam kabatti, values marchesthe
-     * transaction ayyaka Hibernate automatic ga UPDATE query run chestundi (dirty checking).
+     * Dirty checking: card and user are loaded as managed entities, so when their values
+     * change Hibernate automatically issues the UPDATE statements when the transaction commits.
      */
     @Transactional
     public Dtos.ReviewResult review(Long userId, Long cardId, int quality) {
@@ -60,7 +61,7 @@ public class StudyService {
 
         LocalDate today = LocalDate.now();
 
-        // 1. SM-2: card next due date calculate
+        // 1. SM-2: calculate the card's next due date
         Sm2.apply(card, quality, today);
 
         // 2. XP
@@ -70,7 +71,7 @@ public class StudyService {
         // 3. Streak
         updateStreak(user, today);
 
-        // 4. History log (heatmap & accuracy kosam)
+        // 4. History entry (used by the heatmap and accuracy statistics)
         logRepo.save(new ReviewLog(userId, cardId, quality, today, gained));
 
         return new Dtos.ReviewResult(
@@ -83,10 +84,10 @@ public class StudyService {
     }
 
     /**
-     * STREAK logic:
-     *   - ivvala already study chesav  -> em marchadu
-     *   - ninna chesav                 -> streak + 1
-     *   - ekkuva gap (or first time)   -> streak = 1 (restart)
+     * Streak logic:
+     *   - already studied today        -> no change
+     *   - studied yesterday            -> streak + 1
+     *   - longer gap (or first time)   -> streak restarts at 1
      */
     private void updateStreak(User user, LocalDate today) {
         LocalDate last = user.getLastStudyDate();

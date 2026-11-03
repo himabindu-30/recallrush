@@ -22,11 +22,11 @@ public class StudyController {
         this.studyService = studyService;
     }
 
-    // GET /api/study/due              -> anni decks lo due cards
-    // GET /api/study/due?deckId=5     -> aa deck lo matrame
+    // GET /api/study/due            -> due cards from all decks
+    // GET /api/study/due?deckId=5   -> due cards from that deck only
     @GetMapping("/due")
     public List<Card> due(@AuthenticationPrincipal Long userId,
-                          @RequestParam(required = false) Long deckId) { // required=false = optional param
+                          @RequestParam(required = false) Long deckId) { // optional query parameter
         return studyService.dueCards(userId, deckId);
     }
 

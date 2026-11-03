@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * STATS SERVICE = dashboard numbers + heatmap + leaderboard.
+ * Statistics service: dashboard numbers, activity heatmap and leaderboard.
  */
 @Service
 public class StatsService {
@@ -38,18 +38,18 @@ public class StatsService {
         long totalCards = cardRepo.countByDeckOwnerId(userId);
         long dueToday = cardRepo.countByDeckOwnerIdAndDueDateLessThanEqual(userId, today);
 
-        // Accuracy = (quality >= 3 reviews) / total reviews x 100
+        // Accuracy = (reviews rated 3 or higher) / total reviews x 100
         long totalReviews = logRepo.countByUserId(userId);
         long good = logRepo.countByUserIdAndQualityGreaterThanEqual(userId, 3);
         int accuracy = totalReviews == 0 ? 0 : (int) Math.round(good * 100.0 / totalReviews);
 
-        // Heatmap: last 90 days. Key = "2026-11-02", Value = ee roju ennni reviews
+        // Heatmap data for the last 90 days. Key = "2026-11-02", value = reviews done that day.
         Map<String, Long> heatmap = new LinkedHashMap<>();
         for (Object[] row : logRepo.heatmap(userId, today.minusDays(89))) {
-            heatmap.put(row[0].toString(), (Long) row[1]); // row[0]=date, row[1]=count
+            heatmap.put(row[0].toString(), (Long) row[1]); // row[0] = date, row[1] = count
         }
 
-        // Streak display: ninna kuda study cheyyakapothe streak 0 ga chupinchali
+        // Display the streak as 0 if the user did not study yesterday or today
         int streak = user.getStreak();
         LocalDate last = user.getLastStudyDate();
         if (last == null || last.isBefore(today.minusDays(1))) {

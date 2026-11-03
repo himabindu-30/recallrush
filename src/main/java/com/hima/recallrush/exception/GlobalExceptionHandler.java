@@ -9,15 +9,15 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.Map;
 
 /**
- * GLOBAL EXCEPTION HANDLER = anni controllers lo vache errors ni oka chota handle chesi
- * neat JSON {"message": "..."} ga frontend ki pampadam.
+ * Global exception handler: catches errors thrown from any controller in one place
+ * and returns them to the frontend as a tidy JSON body {"message": "..."}.
  *
- * (ResponseStatusException lanti vaatini Spring already handle chestundi; validation errors ki matrame custom.)
+ * (Spring already handles ResponseStatusException; this class adds validation errors.)
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // @Valid fail aithe (ex: username chala chinnadi) ikkadiki vastundi
+    // Invoked when @Valid fails (for example, a username that is too short)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST) // 400
     public Map<String, String> handleValidation(MethodArgumentNotValidException ex) {

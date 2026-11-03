@@ -12,14 +12,14 @@ public interface ReviewLogRepository extends JpaRepository<ReviewLog, Long> {
 
     long countByUserId(Long userId);
 
-    // Accuracy ki: quality >= 3 ante "correct" ga cheppinattu
+    // Used for accuracy: a rating of 3 or higher counts as a correct answer
     long countByUserIdAndQualityGreaterThanEqual(Long userId, int quality);
 
     /**
-     * HEATMAP query: roju ki ennni reviews chesaro.
-     * Custom JPQL (SQL laantide, kani table names kaadu Entity names vaadatam).
-     * Each row = [date, count]
-     * GROUP BY = same date unna rows ni oka group ga chesi count chestundi.
+     * Heatmap query: number of reviews per day.
+     * Custom JPQL (similar to SQL, but uses entity names instead of table names).
+     * Each returned row is [date, count].
+     * GROUP BY collapses all rows with the same date into one group.
      */
     @Query("select r.reviewedOn, count(r) from ReviewLog r " +
             "where r.userId = :userId and r.reviewedOn >= :since " +
